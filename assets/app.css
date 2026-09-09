@@ -188,6 +188,7 @@
   z-index: 50;
   padding: 20px;
 }
+.token-modal[hidden]{ display:none; }
 .token-modal-inner{
   background: var(--card);
   border: 1px solid var(--line);
