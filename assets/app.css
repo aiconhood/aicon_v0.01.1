@@ -168,6 +168,91 @@
 .swap-status-success{ color: var(--lime); border-color: rgba(204,255,0,0.35); background: rgba(204,255,0,0.06); }
 .swap-status-error{ color: #F2C9A8; border-color: rgba(255,138,76,0.35); background: rgba(255,138,76,0.06); }
 
+.token-pill-btn{
+  cursor: pointer;
+  display:flex;
+  align-items:center;
+  gap: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.token-pill-btn:hover{ filter: brightness(1.25); }
+.token-pill-btn .chev{ font-size: 10px; color: var(--dim); }
+
+.token-modal{
+  position: fixed;
+  inset: 0;
+  background: rgba(6,14,12,0.7);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 50;
+  padding: 20px;
+}
+.token-modal-inner{
+  background: var(--card);
+  border: 1px solid var(--line);
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  display:flex;
+  flex-direction:column;
+  padding: 18px;
+}
+.token-modal-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.token-modal-header button{
+  background:none;
+  border:none;
+  color: var(--white);
+  font-size: 22px;
+  line-height:1;
+  cursor:pointer;
+}
+#token-search{
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--white);
+  padding: 10px 12px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  margin-bottom: 10px;
+  outline:none;
+}
+.token-modal-list{
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap: 2px;
+  flex: 1;
+  min-height: 120px;
+}
+.token-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:none;
+  border: none;
+  border-bottom: 1px solid rgba(244,251,243,0.06);
+  padding: 10px 6px;
+  cursor:pointer;
+  text-align:left;
+  color: var(--white);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.token-row:hover{ background: rgba(244,251,243,0.04); }
+.token-row-main{ display:flex; flex-direction:column; gap:2px; }
+.token-row-symbol{ font-weight:600; font-size: 14px; }
+.token-row-name{ font-size: 11px; color: var(--dim); }
+.token-row-price{ font-size: 13px; color: var(--dim); flex-shrink:0; padding-left: 10px; }
+.token-modal-empty{ color: var(--dim); font-size: 13px; padding: 20px 6px; text-align:center; }
+.token-modal-note{ font-size: 11px; color: var(--dim); margin-top: 10px; line-height:1.5; }
+.token-modal-note a{ color: var(--lime); }
+
 .follow-row{
   margin-top: 44px;
   display:flex;

@@ -69,7 +69,9 @@
             <label>You pay</label>
             <div class="swap-field-row">
               <input id="pay-input" type="text" inputmode="decimal" placeholder="0.0" autocomplete="off">
-              <span class="token-pill" id="pay-token-label">ETH</span>
+              <button type="button" class="token-pill token-pill-btn" id="pay-token-btn" data-side="pay">
+                <span id="pay-token-label">ETH</span><span class="chev">▾</span>
+              </button>
             </div>
           </div>
           <button class="swap-arrow swap-arrow-btn" id="flip-direction" type="button" aria-label="Flip swap direction">↓</button>
@@ -77,7 +79,9 @@
             <label>You receive</label>
             <div class="swap-field-row">
               <input id="receive-input" type="text" inputmode="decimal" placeholder="0.0" autocomplete="off" readonly>
-              <span class="token-pill" id="receive-token-label">USDG</span>
+              <button type="button" class="token-pill token-pill-btn" id="receive-token-btn" data-side="receive">
+                <span id="receive-token-label">USDG</span><span class="chev">▾</span>
+              </button>
             </div>
           </div>
           <div class="min-received-row" id="min-received-row" hidden>
@@ -86,6 +90,18 @@
           </div>
           <p id="swap-status" class="swap-status" hidden></p>
           <button class="btn" id="swap-submit" disabled>Connect wallet to swap</button>
+        </div>
+      </div>
+
+      <div id="token-modal" class="token-modal" hidden>
+        <div class="token-modal-inner">
+          <div class="token-modal-header">
+            <span>Select a token</span>
+            <button type="button" id="token-modal-close" aria-label="Close">×</button>
+          </div>
+          <input id="token-search" type="text" placeholder="Search name or symbol" autocomplete="off">
+          <div id="token-modal-list" class="token-modal-list"></div>
+          <p class="token-modal-note">Prices are Uniswap market data via GeckoTerminal, refreshed on load. Robinhood Chain has documented copycat/honeypot tokens — always verify an unfamiliar contract address on <a href="https://robinhoodchain.blockscout.com" target="_blank" rel="noopener">Blockscout</a> before swapping. Tokens without a live Uniswap V2 route show a price but can't be swapped here yet.</p>
         </div>
       </div>
 

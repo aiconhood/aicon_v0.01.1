@@ -32,7 +32,7 @@ import {
   MaxUint256
 } from 'https://esm.sh/ethers@6.13.4';
 
-const PROJECT_ID = 'YOUR_REOWN_PROJECT_ID';
+const PROJECT_ID = '9294a4f6c6b5683cb27499c339368964';
 
 const robinhoodChain = {
   id: 4663,
@@ -58,7 +58,8 @@ const DEADLINE_SECONDS = 600; // 10 minutes
 const ROUTER_ABI = [
   'function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)',
   'function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)',
-  'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)'
+  'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)',
+  'function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)'
 ];
 
 const ERC20_ABI = [
@@ -68,10 +69,13 @@ const ERC20_ABI = [
   'function approve(address spender, uint256 amount) returns (bool)'
 ];
 
-const TOKENS = {
-  ETH: { symbol: 'ETH', address: null, decimals: 18 },
-  USDG: { symbol: 'USDG', address: USDG_ADDRESS, decimals: null } // fetched at runtime, never assumed
-};
+// Token registry — starts with the two proven-liquid pinned tokens, then grows
+// with tokens discovered live from GeckoTerminal (see loadDiscoveredTokens below).
+// Keyed by lowercased address, or the literal string 'NATIVE' for ETH.
+const tokenRegistry = new Map([
+  ['NATIVE', { key: 'NATIVE', symbol: 'ETH', name: 'Ether', address: null, decimals: 18, priceUsd: null, volume24h: Infinity, pinned: true }],
+  [USDG_ADDRESS.toLowerCase(), { key: USDG_ADDRESS.toLowerCase(), symbol: 'USDG', name: 'Global Dollar', address: USDG_ADDRESS, decimals: null, priceUsd: null, volume24h: Infinity, pinned: true }]
+]);
 
 const readOnlyProvider = new JsonRpcProvider(robinhoodChain.rpcUrls.default.http[0]);
 
@@ -140,23 +144,31 @@ const payInput = document.getElementById('pay-input');
 const receiveInput = document.getElementById('receive-input');
 const payTokenLabel = document.getElementById('pay-token-label');
 const receiveTokenLabel = document.getElementById('receive-token-label');
+const payTokenBtn = document.getElementById('pay-token-btn');
+const receiveTokenBtn = document.getElementById('receive-token-btn');
 const flipBtn = document.getElementById('flip-direction');
 const swapBtn = document.getElementById('swap-submit');
 const swapStatus = document.getElementById('swap-status');
 const minReceivedRow = document.getElementById('min-received-row');
 const minReceivedValue = document.getElementById('min-received-value');
 
-let direction = { pay: 'ETH', receive: 'USDG' }; // matches the default markup
+const tokenModal = document.getElementById('token-modal');
+const tokenModalClose = document.getElementById('token-modal-close');
+const tokenSearchInput = document.getElementById('token-search');
+const tokenModalList = document.getElementById('token-modal-list');
+
+let direction = { pay: 'NATIVE', receive: USDG_ADDRESS.toLowerCase() }; // matches the default markup
 let quoteTimer = null;
 let latestQuote = null; // { amountIn, amountOutMin, path }
+let activeSide = null; // 'pay' | 'receive' — which field the token modal is editing
 
 function tokenOf(side) {
-  return TOKENS[direction[side]];
+  return tokenRegistry.get(direction[side]);
 }
 
 async function decimalsOf(token) {
-  if (token.symbol === 'ETH') return 18;
-  if (token.decimals !== null) return token.decimals;
+  if (token.key === 'NATIVE') return 18;
+  if (token.decimals !== null && token.decimals !== undefined) return token.decimals;
   const c = new Contract(token.address, ERC20_ABI, readOnlyProvider);
   token.decimals = Number(await c.decimals());
   return token.decimals;
@@ -181,10 +193,14 @@ function refreshSwapAvailability() {
   swapBtn.textContent = ready ? 'Review & swap' : 'Connect wallet to swap';
 }
 
+function updateTokenLabels() {
+  if (payTokenLabel) payTokenLabel.textContent = tokenOf('pay')?.symbol || '?';
+  if (receiveTokenLabel) receiveTokenLabel.textContent = tokenOf('receive')?.symbol || '?';
+}
+
 flipBtn?.addEventListener('click', () => {
   direction = { pay: direction.receive, receive: direction.pay };
-  if (payTokenLabel) payTokenLabel.textContent = direction.pay;
-  if (receiveTokenLabel) receiveTokenLabel.textContent = direction.receive;
+  updateTokenLabels();
   if (payInput) payInput.value = '';
   if (receiveInput) receiveInput.value = '';
   latestQuote = null;
@@ -209,17 +225,23 @@ async function fetchQuote() {
     return;
   }
 
+  const payToken = tokenOf('pay');
+  const receiveToken = tokenOf('receive');
+
   try {
-    const payToken = tokenOf('pay');
-    const receiveToken = tokenOf('receive');
     const payDecimals = await decimalsOf(payToken);
     const receiveDecimals = await decimalsOf(receiveToken);
-
     const amountIn = parseUnits(amountStr, payDecimals);
-    const path = [
-      payToken.symbol === 'ETH' ? WETH_ADDRESS : payToken.address,
-      receiveToken.symbol === 'ETH' ? WETH_ADDRESS : receiveToken.address
-    ];
+
+    // Build the V2 route: direct pair if either side is native ETH,
+    // otherwise hop through WETH (token -> WETH -> token).
+    const payAddr = payToken.key === 'NATIVE' ? WETH_ADDRESS : payToken.address;
+    const receiveAddr = receiveToken.key === 'NATIVE' ? WETH_ADDRESS : receiveToken.address;
+    const path = payAddr.toLowerCase() === receiveAddr.toLowerCase()
+      ? [payAddr, receiveAddr]
+      : (payToken.key === 'NATIVE' || receiveToken.key === 'NATIVE')
+        ? [payAddr, receiveAddr]
+        : [payAddr, WETH_ADDRESS, receiveAddr];
 
     const router = new Contract(UNISWAP_V2_ROUTER, ROUTER_ABI, readOnlyProvider);
     const amounts = await router.getAmountsOut(amountIn, path);
@@ -230,12 +252,18 @@ async function fetchQuote() {
     if (minReceivedValue) minReceivedValue.textContent = `${formatUnits(amountOutMin, receiveDecimals)} ${receiveToken.symbol}`;
     if (minReceivedRow) minReceivedRow.hidden = false;
 
-    latestQuote = { amountIn, amountOutMin, path };
+    latestQuote = { amountIn, amountOutMin, path, payIsNative: payToken.key === 'NATIVE', receiveIsNative: receiveToken.key === 'NATIVE', payAddress: payToken.address };
     setStatus('');
   } catch (err) {
     console.error('Quote failed', err);
     if (receiveInput) receiveInput.value = '';
-    setStatus('Could not fetch a price for this pair/amount right now.', 'error');
+    // Fall back to the informational GeckoTerminal price when there's no
+    // direct on-chain V2 route (common for V3/V4-only tokens on this chain).
+    if (receiveToken?.priceUsd != null && payToken?.priceUsd != null) {
+      setStatus(`No direct Uniswap V2 route on-chain for this pair yet, so it can't be swapped here. Reference market price: 1 ${payToken.symbol} ≈ $${payToken.priceUsd.toFixed(4)}, 1 ${receiveToken.symbol} ≈ $${receiveToken.priceUsd.toFixed(4)}.`, 'error');
+    } else {
+      setStatus('No direct Uniswap V2 route found on-chain for this pair — it can\'t be swapped here yet.', 'error');
+    }
   }
   refreshSwapAvailability();
 }
@@ -260,10 +288,9 @@ swapBtn?.addEventListener('click', async () => {
     const account = await signer.getAddress();
     const router = new Contract(UNISWAP_V2_ROUTER, ROUTER_ABI, signer);
     const deadline = Math.floor(Date.now() / 1000) + DEADLINE_SECONDS;
-    const payToken = tokenOf('pay');
 
     let tx;
-    if (payToken.symbol === 'ETH') {
+    if (latestQuote.payIsNative) {
       setStatus('Confirm the swap in your wallet…', 'info');
       tx = await router.swapExactETHForTokens(
         latestQuote.amountOutMin,
@@ -273,7 +300,7 @@ swapBtn?.addEventListener('click', async () => {
         { value: latestQuote.amountIn }
       );
     } else {
-      const tokenContract = new Contract(payToken.address, ERC20_ABI, signer);
+      const tokenContract = new Contract(latestQuote.payAddress, ERC20_ABI, signer);
       const allowance = await tokenContract.allowance(account, UNISWAP_V2_ROUTER);
       if (allowance < latestQuote.amountIn) {
         setStatus('Approve token access in your wallet…', 'info');
@@ -281,13 +308,9 @@ swapBtn?.addEventListener('click', async () => {
         await approveTx.wait();
       }
       setStatus('Confirm the swap in your wallet…', 'info');
-      tx = await router.swapExactTokensForETH(
-        latestQuote.amountIn,
-        latestQuote.amountOutMin,
-        latestQuote.path,
-        account,
-        deadline
-      );
+      tx = latestQuote.receiveIsNative
+        ? await router.swapExactTokensForETH(latestQuote.amountIn, latestQuote.amountOutMin, latestQuote.path, account, deadline)
+        : await router.swapExactTokensForTokens(latestQuote.amountIn, latestQuote.amountOutMin, latestQuote.path, account, deadline);
     }
 
     setStatus('Swap submitted — waiting for confirmation…', 'info');
@@ -307,4 +330,125 @@ swapBtn?.addEventListener('click', async () => {
   }
 });
 
+// ==========================================================================
+// Token discovery (GeckoTerminal) + picker modal
+// ==========================================================================
+//
+// Pulls top pools directly from Uniswap's own v2/v3/v4 deployments on
+// Robinhood Chain (never from the dozens of other DEX forks/launchpads on
+// this chain) via GeckoTerminal's free public API, purely for browsing and
+// live USD reference prices. Executing a swap still only works for pairs
+// that resolve through the Uniswap V2 router above — see fetchQuote().
+
+const GECKOTERMINAL_BASE = 'https://api.geckoterminal.com/api/v2';
+const GECKOTERMINAL_NETWORK = 'robinhood';
+const UNISWAP_DEX_IDS = ['uniswap_v2', 'uniswap_v3', 'uniswap_v4'];
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function formatPrice(n) {
+  if (n === 0) return '0';
+  if (n < 0.01) return n.toExponential(2);
+  if (n < 1) return n.toFixed(4);
+  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+async function loadDiscoveredTokens() {
+  for (const dex of UNISWAP_DEX_IDS) {
+    try {
+      const res = await fetch(`${GECKOTERMINAL_BASE}/networks/${GECKOTERMINAL_NETWORK}/dexes/${dex}/pools?include=base_token,quote_token&page=1`);
+      if (!res.ok) continue;
+      const json = await res.json();
+      const tokensById = {};
+      for (const inc of (json.included || [])) {
+        if (inc.type === 'token') tokensById[inc.id] = inc.attributes;
+      }
+      for (const pool of (json.data || [])) {
+        const baseRel = pool.relationships?.base_token?.data;
+        if (!baseRel) continue;
+        const tAttrs = tokensById[baseRel.id];
+        if (!tAttrs?.address) continue;
+        const key = tAttrs.address.toLowerCase();
+        if (tokenRegistry.get(key)?.pinned) continue; // don't override ETH/USDG
+        const vol = Number(pool.attributes?.volume_usd?.h24 || 0);
+        const existing = tokenRegistry.get(key);
+        if (existing && (existing.volume24h || 0) >= vol) continue;
+        const priceUsd = pool.attributes?.base_token_price_usd ? Number(pool.attributes.base_token_price_usd) : null;
+        tokenRegistry.set(key, {
+          key,
+          symbol: tAttrs.symbol || '?',
+          name: tAttrs.name || '',
+          address: tAttrs.address,
+          decimals: (tAttrs.decimals ?? null),
+          priceUsd,
+          volume24h: vol,
+          pinned: false
+        });
+      }
+    } catch (err) {
+      console.error('Token discovery failed for', dex, err);
+    }
+  }
+  renderTokenList(tokenSearchInput?.value.trim().toLowerCase() || '');
+}
+
+function renderTokenList(filter) {
+  if (!tokenModalList) return;
+  const items = [...tokenRegistry.values()]
+    .filter((t) => !filter || t.symbol.toLowerCase().includes(filter) || t.name.toLowerCase().includes(filter))
+    .sort((a, b) => {
+      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+      return (b.volume24h || 0) - (a.volume24h || 0);
+    })
+    .slice(0, 80);
+
+  tokenModalList.innerHTML = items.length ? items.map((t) => `
+    <button type="button" class="token-row" data-key="${escapeHtml(t.key)}">
+      <span class="token-row-main">
+        <span class="token-row-symbol">${escapeHtml(t.symbol)}</span>
+        <span class="token-row-name">${escapeHtml(t.name)}</span>
+      </span>
+      <span class="token-row-price">${t.priceUsd != null ? '$' + formatPrice(t.priceUsd) : '—'}</span>
+    </button>
+  `).join('') : '<p class="token-modal-empty">No tokens found.</p>';
+
+  tokenModalList.querySelectorAll('.token-row').forEach((btn) => {
+    btn.addEventListener('click', () => selectToken(btn.dataset.key));
+  });
+}
+
+function selectToken(key) {
+  if (!activeSide || !tokenRegistry.has(key)) return;
+  const otherSide = activeSide === 'pay' ? 'receive' : 'pay';
+  if (direction[otherSide] === key) {
+    direction[otherSide] = direction[activeSide]; // swap sides rather than allow same token twice
+  }
+  direction[activeSide] = key;
+  updateTokenLabels();
+  if (payInput) payInput.value = '';
+  if (receiveInput) receiveInput.value = '';
+  latestQuote = null;
+  if (minReceivedRow) minReceivedRow.hidden = true;
+  setStatus('');
+  if (tokenModal) tokenModal.hidden = true;
+  refreshSwapAvailability();
+}
+
+function openTokenModal(side) {
+  activeSide = side;
+  if (tokenSearchInput) tokenSearchInput.value = '';
+  renderTokenList('');
+  if (tokenModal) tokenModal.hidden = false;
+  tokenSearchInput?.focus();
+}
+
+payTokenBtn?.addEventListener('click', () => openTokenModal('pay'));
+receiveTokenBtn?.addEventListener('click', () => openTokenModal('receive'));
+tokenModalClose?.addEventListener('click', () => { if (tokenModal) tokenModal.hidden = true; });
+tokenModal?.addEventListener('click', (e) => { if (e.target === tokenModal) tokenModal.hidden = true; });
+tokenSearchInput?.addEventListener('input', () => renderTokenList(tokenSearchInput.value.trim().toLowerCase()));
+
+loadDiscoveredTokens();
 refreshSwapAvailability();
