@@ -1,0 +1,190 @@
+/* ---------- app page (extends style.css tokens) ---------- */
+
+.app-shell{ padding: 90px 24px 60px; }
+.app-shell-inner{ max-width: 980px; }
+
+.app-title{
+  font-family:'Bungee', cursive;
+  font-size: clamp(34px, 5.2vw, 58px);
+  line-height: 1.08;
+  color: var(--white);
+  margin-top: 22px;
+  max-width: 640px;
+}
+.app-lead{
+  margin-top: 20px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--dim);
+  max-width: 620px;
+}
+
+.app-grid{
+  margin-top: 52px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.panel{
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 30px 28px;
+}
+.panel h2{
+  font-family:'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--white);
+}
+.panel-header-row{ display:flex; align-items:center; justify-content:space-between; gap: 12px; }
+.panel-sub{ margin-top: 10px; color: var(--dim); font-size: 14.5px; line-height: 1.6; }
+
+.status-pill{
+  font-size: 12px;
+  color: var(--olive);
+  background: var(--lime);
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.connect-slot{ margin-top: 24px; }
+.setup-notice{
+  margin-top: 14px;
+  font-size: 13px;
+  color: #E4B15C;
+  border: 1px solid rgba(228,177,92,0.3);
+  background: rgba(228,177,92,0.06);
+  padding: 10px 14px;
+  line-height: 1.5;
+}
+
+.network-row{
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+}
+.net-label{ font-size: 13px; color: var(--dim); }
+
+.callout-warn{
+  margin-top: 16px;
+  border: 1px solid rgba(255,138,76,0.35);
+  background: rgba(255,138,76,0.06);
+  color: #F2C9A8;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.callout-warn strong{ color: var(--white); }
+
+.disabled-panel{ position: relative; }
+.swap-mock{ margin-top: 24px; display:flex; flex-direction:column; gap: 4px; }
+.swap-field{
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 14px 16px;
+}
+.swap-field label{ display:block; font-size: 12px; color: var(--dim); margin-bottom: 8px; }
+.swap-field-row{ display:flex; align-items:center; justify-content:space-between; gap: 10px; }
+.swap-field-row input{
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--white);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  width: 100%;
+}
+.swap-field-row input::placeholder{ color: #4A6560; }
+.swap-field-row input:disabled{ cursor: not-allowed; }
+.token-pill{
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+  background: rgba(244,251,243,0.06);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+}
+.swap-arrow{
+  align-self:center;
+  color: var(--lime);
+  font-size: 16px;
+  padding: 4px 0;
+}
+.swap-arrow-btn{
+  background: var(--card);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin: -4px auto;
+  z-index: 1;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.swap-arrow-btn:hover{ transform: rotate(180deg); filter: brightness(1.3); }
+.btn-disabled{
+  margin-top: 14px;
+  width: 100%;
+  background: var(--olive);
+  color: #8A9280;
+  cursor: not-allowed;
+  clip-path: none;
+}
+.btn-disabled:hover{ transform:none; filter:none; }
+.swap-mock .btn{ margin-top: 14px; width: 100%; }
+.swap-mock .btn:disabled{
+  background: var(--olive);
+  color: #8A9280;
+  cursor: not-allowed;
+  transform:none;
+  filter:none;
+}
+.status-pill-live{ background: var(--lime); color: var(--olive); }
+.min-received-row{
+  margin-top: 4px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size: 12px;
+  color: var(--dim);
+  padding: 2px 2px 8px;
+}
+.swap-status{
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  word-break: break-word;
+}
+.swap-status-info{ color: var(--dim); background: rgba(244,251,243,0.04); }
+.swap-status-success{ color: var(--lime); border-color: rgba(204,255,0,0.35); background: rgba(204,255,0,0.06); }
+.swap-status-error{ color: #F2C9A8; border-color: rgba(255,138,76,0.35); background: rgba(255,138,76,0.06); }
+
+.follow-row{
+  margin-top: 44px;
+  display:flex;
+  align-items:center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--dim);
+}
+.follow-row .btn{ padding: 10px 20px; font-size: 14px; }
+
+.app-disclaimer{ margin-top: 44px; border-top: 1px solid var(--line); padding-top: 18px; }
+
+/* appkit-button theming hooks are set via themeVariables in app.js;
+   this just keeps the nav slot from collapsing before the component upgrades */
+appkit-button{ min-width: 155px; display:inline-block; }
+
+@media (max-width: 860px){
+  .app-grid{ grid-template-columns: 1fr; }
+}

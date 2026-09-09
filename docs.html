@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docs — AICON</title>
+<meta name="description" content="AICON documentation: how the router works, architecture, integration, and security model.">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/" class="logo-mark">
+      <img src="assets/logo.svg" alt="AICON logo">
+      <span>AICON</span>
+    </a>
+    <div class="nav-links">
+      <a href="/#how">How it works</a>
+      <a href="/#features">Why AICON</a>
+      <a href="/docs" class="active">Docs</a>
+      <a href="https://github.com/aiconhood" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://x.com/aicon_hood" target="_blank" rel="noopener">Twitter</a>
+    </div>
+    <div class="nav-cta">
+      <a href="/app" class="btn">Launch App</a>
+    </div>
+  </nav>
+</header>
+
+<div class="docs-body">
+  <aside class="docs-nav">
+    <h4>Documentation</h4>
+    <ul id="doc-toc">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#how-it-works">How it works</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#contracts">Smart contracts</a></li>
+      <li><a href="#integration">Integration guide</a></li>
+      <li><a href="#security">Security &amp; non-custody</a></li>
+      <li><a href="#supported-assets">Supported assets</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a href="#disclaimer">Disclaimer</a></li>
+    </ul>
+  </aside>
+
+  <main class="docs-content">
+    <h1>AICON Documentation</h1>
+    <p class="intro">AICON is a non-custodial swap router built on Robinhood Chain. This page covers how it works, how it's built, and how to integrate it.</p>
+
+    <section class="doc-section" id="overview">
+      <h2>Overview</h2>
+      <p>Robinhood Chain launched with multiple DEXs live from day one, and more routing partners have joined since. Liquidity for any given pair is now spread across several venues, which means no single pool reliably has the best price.</p>
+      <p>AICON solves that by sitting on top of the chain's DEXs rather than competing with them. It holds no liquidity of its own. Instead, it checks quotes from the DEXs available on Robinhood Chain and routes each swap through whichever pool gives the best output at that moment.</p>
+      <div class="callout"><strong>Not affiliated with Robinhood.</strong> AICON is an independent third-party application built on Robinhood Chain. It has no relationship with Robinhood Markets, Inc.</div>
+    </section>
+
+    <section class="doc-section" id="how-it-works">
+      <h2>How it works</h2>
+      <ol>
+        <li><strong>Connect.</strong> Connect a JSON-RPC compatible wallet. AICON prompts the user to add Robinhood Chain if it isn't already configured.</li>
+        <li><strong>Quote.</strong> AICON queries the on-chain quoters of each integrated DEX for the requested pair and amount.</li>
+        <li><strong>Compare.</strong> The quotes are compared after estimated gas, and the best net output is selected.</li>
+        <li><strong>Execute.</strong> A single transaction sends the swap through the chosen DEX's router contract. Funds move directly from the user's wallet to the pool and back &mdash; AICON's contract never holds a balance between steps.</li>
+      </ol>
+    </section>
+
+    <section class="doc-section" id="architecture">
+      <h2>Architecture</h2>
+      <p>AICON has three moving parts:</p>
+      <table class="doc-table">
+        <tr><th>Layer</th><th>Role</th></tr>
+        <tr><td>Router contract</td><td>A thin on-chain contract that forwards calls to the chosen DEX's router and enforces the user's minimum output.</td></tr>
+        <tr><td>Quote engine</td><td>Off-chain service that queries each integrated DEX's quoter and ranks results before a swap is submitted.</td></tr>
+        <tr><td>Frontend</td><td>Wallet connection, quote display, and swap confirmation UI.</td></tr>
+      </table>
+      <p>The router never becomes an intermediary for custody &mdash; it only ever forwards a call in the same transaction the user signs.</p>
+    </section>
+
+    <section class="doc-section" id="contracts">
+      <h2>Smart contracts</h2>
+      <p>The core contract is a minimal swap router. It does not manage liquidity, mint any token, or take custody of funds outside a single atomic transaction.</p>
+      <div class="code-block"><pre>function swapExactTokensForTokens(
+    address tokenIn,
+    address tokenOut,
+    uint256 amountIn,
+    uint256 minAmountOut,
+    address dexTarget,
+    bytes calldata routeData
+) external returns (uint256 amountOut);</pre></div>
+      <p>Key properties:</p>
+      <ul>
+        <li><code>minAmountOut</code> is enforced on-chain &mdash; the transaction reverts rather than executing at a worse price.</li>
+        <li><code>dexTarget</code> points to the specific DEX router selected by the quote engine for this trade.</li>
+        <li>The contract is guarded against reentrancy and can be paused in an emergency by the deployer address.</li>
+        <li>Native ETH swaps are wrapped and unwrapped automatically against WETH.</li>
+      </ul>
+      <p>Contract addresses will be published here and pinned on <a href="https://github.com/aiconhood" target="_blank" rel="noopener">GitHub</a> once audited and deployed to mainnet.</p>
+    </section>
+
+    <section class="doc-section" id="integration">
+      <h2>Integration guide</h2>
+      <p>Other apps on Robinhood Chain can route swaps through AICON directly.</p>
+      <h3>1. Get a quote</h3>
+      <div class="code-block"><pre>const quote = await aicon.getQuote({
+  tokenIn: "0x...",
+  tokenOut: "0x...",
+  amountIn: "1000000000000000000"
+});</pre></div>
+      <h3>2. Build the transaction</h3>
+      <div class="code-block"><pre>const tx = await aicon.buildSwapTx({
+  quoteId: quote.id,
+  slippageBps: 50 // 0.5%
+});</pre></div>
+      <h3>3. Send it</h3>
+      <div class="code-block"><pre>const receipt = await wallet.sendTransaction(tx);</pre></div>
+      <p>Full SDK reference and example repo will live at <a href="https://github.com/aiconhood" target="_blank" rel="noopener">github.com/aiconhood</a>.</p>
+    </section>
+
+    <section class="doc-section" id="security">
+      <h2>Security &amp; non-custody</h2>
+      <p>AICON is built around one rule: user funds never rest in an AICON-controlled address between the start and end of a swap.</p>
+      <ul>
+        <li>Every swap is a single atomic transaction. It either completes at or above the user's accepted minimum output, or it reverts entirely.</li>
+        <li>The router contract holds no liquidity and has no admin function that can move user funds.</li>
+        <li>Token approvals are scoped to the router contract only, and can be revoked at any time through standard wallet tooling.</li>
+        <li>The contract will go through an independent audit before mainnet funds are routed through it at scale.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="supported-assets">
+      <h2>Supported assets</h2>
+      <p>AICON routes any ERC-20 pair with active liquidity on an integrated DEX, including Robinhood Chain's tokenized stock assets. Because tokenized stocks trade continuously on a chain that settles against markets that aren't always open, quotes for these pairs may carry wider spreads outside of traditional market hours &mdash; the quote engine surfaces this rather than hiding it.</p>
+      <table class="doc-table">
+        <tr><th>Category</th><th>Example</th></tr>
+        <tr><td>Native / wrapped ETH</td><td>ETH, WETH</td></tr>
+        <tr><td>Stablecoins</td><td>USDG and other chain-native stables</td></tr>
+        <tr><td>Tokenized stocks</td><td>NVDA, AAPL, GOOG and other Stock Tokens</td></tr>
+      </table>
+    </section>
+
+    <section class="doc-section" id="roadmap">
+      <h2>Roadmap</h2>
+      <ul>
+        <li><strong>Now:</strong> Routing across Uniswap's Robinhood Chain AMM and Fables' dynamic-fee pools.</li>
+        <li><strong>Next:</strong> Additional routing sources as they go live on Robinhood Chain.</li>
+        <li><strong>Later:</strong> Public API for third-party apps to embed AICON routing directly.</li>
+      </ul>
+    </section>
+
+    <section class="doc-section" id="faq">
+      <h2>FAQ</h2>
+      <h3>Is there an AICON token?</h3>
+      <p>No. AICON is a tool, not a token launch.</p>
+      <h3>Does AICON charge a fee?</h3>
+      <p>No platform fee is charged on swaps routed through AICON.</p>
+      <h3>Is AICON affiliated with Robinhood?</h3>
+      <p>No. AICON is an independent third-party application built on Robinhood Chain, with no affiliation to Robinhood Markets, Inc.</p>
+      <h3>Where can I follow updates?</h3>
+      <p>Follow <a href="https://x.com/aicon_hood" target="_blank" rel="noopener">@aicon_hood</a> on Twitter/X, or watch the repo at <a href="https://github.com/aiconhood" target="_blank" rel="noopener">github.com/aiconhood</a>.</p>
+    </section>
+
+    <section class="doc-section" id="disclaimer">
+      <h2>Disclaimer</h2>
+      <p>AICON is an independent third-party application built on Robinhood Chain. It is not affiliated with, endorsed by, or sponsored by Robinhood Markets, Inc. Nothing in this documentation is financial advice. Interacting with smart contracts carries risk, including the risk of total loss. Review the contract code and audit reports before use.</p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <a href="/" class="logo-mark">
+      <img src="assets/logo.svg" alt="AICON logo" style="height:36px; width:36px;">
+      <span style="font-size:16px;">AICON</span>
+    </a>
+    <div class="footer-links">
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/aiconhood" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://x.com/aicon_hood" target="_blank" rel="noopener">Twitter</a>
+    </div>
+  </div>
+  <div class="footer-disclaimer wrap">
+    AICON is an independent third-party application built on Robinhood Chain. It is not affiliated with, endorsed by, or sponsored by Robinhood Markets, Inc. Nothing on this site is financial advice.
+  </div>
+</footer>
+
+<script>
+  const links = document.querySelectorAll('#doc-toc a');
+  const sections = Array.from(document.querySelectorAll('.doc-section'));
+  const setActive = () => {
+    let current = sections[0].id;
+    for (const s of sections){
+      if (window.scrollY + 120 >= s.offsetTop) current = s.id;
+    }
+    links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + current));
+  };
+  window.addEventListener('scroll', setActive);
+  setActive();
+</script>
+
+</body>
+</html>

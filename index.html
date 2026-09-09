@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AICON — Swap smarter on Robinhood Chain</title>
+<meta name="description" content="AICON is a non-custodial swap router on Robinhood Chain. It checks every DEX on the chain and routes your trade to the best price, in one transaction.">
+<meta property="og:title" content="AICON — Swap smarter on Robinhood Chain">
+<meta property="og:description" content="Non-custodial swap router on Robinhood Chain. Best price across every DEX, one transaction.">
+<meta property="og:image" content="assets/logo.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@aicon_hood">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="/" class="logo-mark">
+      <img src="assets/logo.svg" alt="AICON logo">
+      <span>AICON</span>
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Why AICON</a>
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/aiconhood" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://x.com/aicon_hood" target="_blank" rel="noopener">Twitter</a>
+    </div>
+    <div class="nav-cta">
+      <a href="/app" class="btn">Launch App</a>
+    </div>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="hero-bg-streak">
+    <svg viewBox="0 0 600 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M480 40L60 560H20V500L480 40Z" fill="#CCFF00" fill-opacity="0.95"/>
+      <path d="M470 60L100 560H70L78 500L470 60Z" fill="#3A3E29" fill-opacity="0.9"/>
+    </svg>
+  </div>
+  <div class="hero-inner">
+    <div class="eyebrow-tag"><span class="dot"></span>Live on Robinhood Chain</div>
+    <h1>Swap smarter<br>on <span class="lime">Robinhood</span><br>Chain.</h1>
+    <p class="lead">AICON checks every DEX on Robinhood Chain and routes your trade to the best price, in one transaction. No pool of our own, no new token, no manual price hopping.</p>
+    <div class="hero-actions">
+      <a href="/app" class="btn">Launch App</a>
+      <a href="/docs" class="btn btn-outline">Read the docs</a>
+    </div>
+    <div class="hero-disclaimer">
+      AICON is an independent third-party router. Not affiliated with, endorsed by, or sponsored by Robinhood Markets, Inc.
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Three steps, one swap</h2>
+      <p>From wallet to best price, with nothing sitting in between.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="step-index">01</span>
+        <h3>Connect your wallet</h3>
+        <p>Link any wallet that speaks JSON-RPC. AICON prompts Robinhood Chain automatically if it's not added yet.</p>
+      </div>
+      <div class="step">
+        <span class="step-index">02</span>
+        <h3>Get the best route</h3>
+        <p>AICON pulls live quotes from Uniswap, Fables, and other pools on the chain, and picks the one that pays you the most.</p>
+      </div>
+      <div class="step">
+        <span class="step-index">03</span>
+        <h3>Swap, non-custodially</h3>
+        <p>Your tokens go straight from your wallet to the chosen pool and back. Either the swap lands at your price, or it reverts.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Built for a chain full of tokenized stocks</h2>
+      <p>Robinhood Chain isn't just another EVM chain. The routing has to account for that.</p>
+    </div>
+    <div class="feature-list">
+      <div class="feature-row">
+        <h3>Multi-DEX routing</h3>
+        <p>Checks Uniswap's AMM, Fables' dynamic-fee pools, and other venues live on Robinhood Chain, then routes to whichever gives the best output right now.</p>
+      </div>
+      <div class="feature-row">
+        <h3>Non-custodial by design</h3>
+        <p>AICON never holds your funds between steps. There's no in-between state where a swap can get stuck.</p>
+      </div>
+      <div class="feature-row">
+        <h3>Aware of stock-token behavior</h3>
+        <p>Stock tokens trade on a 24/7 chain against a market that isn't. Spreads move with market hours even when the chain never sleeps, and routing accounts for that instead of treating every pair the same.</p>
+      </div>
+      <div class="feature-row">
+        <h3>No token, no catch</h3>
+        <p>Nothing to buy first. AICON is a tool, not a launch.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-band">
+  <div class="stats-grid">
+    <div>
+      <div class="stat-num">—</div>
+      <div class="stat-label">Volume routed</div>
+    </div>
+    <div>
+      <div class="stat-num">—</div>
+      <div class="stat-label">Swaps completed</div>
+    </div>
+    <div>
+      <div class="stat-num">2+</div>
+      <div class="stat-label">DEXs integrated</div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta">
+  <h2>Your best price is already <span class="lime" style="font-family:'Bungee',cursive;">out there</span>.</h2>
+  <p style="color:var(--dim); margin-top:18px; font-size:17px;">AICON just finds it for you.</p>
+  <a href="/app" class="btn">Launch App</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <a href="/" class="logo-mark">
+      <img src="assets/logo.svg" alt="AICON logo" style="height:36px; width:36px;">
+      <span style="font-size:16px;">AICON</span>
+    </a>
+    <div class="footer-links">
+      <a href="/docs">Docs</a>
+      <a href="https://github.com/aiconhood" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://x.com/aicon_hood" target="_blank" rel="noopener">Twitter</a>
+    </div>
+  </div>
+  <div class="footer-disclaimer wrap">
+    AICON is an independent third-party application built on Robinhood Chain. It is not affiliated with, endorsed by, or sponsored by Robinhood Markets, Inc. Nothing on this site is financial advice.
+  </div>
+</footer>
+
+</body>
+</html>
